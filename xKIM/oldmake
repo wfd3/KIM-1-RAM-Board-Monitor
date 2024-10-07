@@ -1,0 +1,2 @@
+#!/bin/sh
+/m/slow/RetroComputers/6502/as65/as65 -l xKIM.asm

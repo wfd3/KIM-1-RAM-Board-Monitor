@@ -1,0 +1,155 @@
+AS65 Assembler for R6502 [1.42].                                     Page    1
+-------------------------------- samplext.asm --------------------------------
+
+142 lines read, no errors in pass 1.
+                        ;=====================================================
+                        ; A sample extension for the Extended KIM monitor.
+                        ; This is a very simple example of how to write an
+                        ; extension (adding a new command) for the 
+                        ; Extended KIM monitor.
+                        ;
+                        ; How can you test this?  Easy.  First, use the "?"
+                        ; command in the extended monitor and verify the
+                        ; "Z" command is not listed, then load the binary
+                        ; version of this file.  Do "?" again and you'll see
+                        ; the new command has been added and can be used.
+                        ;
+                        ; 12/26/2015 - Bob Applegate, bob@corshamtech.com
+                        ; 09/29/2021 - Bob Applegate
+                        ;		Minor cleanup
+                        ;
+                        ; Consider buying a KIM-1 expansion board or a 
+                        ; KIM Clone computer from us:
+                        ;
+                        ;    www.corshamtech.com
+                        ;
+                        ;=====================================================
+                        ;
+                        ; First, define some common ASCII characters
+                        ;
+000a =                  LF		equ	$0a
+000d =                  CR		equ	$0d
+                        ;
+                        		include	"xkim.inc"
+                        ;=====================================================
+                        ; This file contains vectors for Corsham Technologies'
+                        ; xKIM monitor.  Last update 12/12/2021 for v1.8.
+                        ;
+                        ; Note that some subroutine names have changed
+                        ; slightly to fix duplicate names in the KIM monitor.
+                        ;
+                        ; See the xKIM User Manual for documentation on the
+                        ; data in this file.
+                        ;
+                        ; www.corshamtech.com
+                        ; https://github.com/CorshamTech/xKIM
+                        ;
+e000 =                  xKIM_BASE	equ	$e000
+                        		bss
+0000 =                  origBss		equ	*	;SAVE BSS!!!
+e000 =                  		org	xKIM_BASE
+                        ;
+                        ; Main functions
+                        ;
+e000 =                  extKIM		ds	3	;extended monitor
+e003 =                  xkOUTCH		ds	3	;output A to console
+e006 =                  xkGETCH		ds	3	;get a key and echo
+e009 =                  xkGETCHne	ds	3	;no echo - KIM can't do it
+e00c =                  xKIM_res_0	ds	3	;future - console stat
+e00f =                  putsil		ds	3	;print string after JSR
+e012 =                  getHex		ds	3	;get hex value in A
+e015 =                  xkPRTBYT	ds	3	;print A as hex
+e018 =                  getStartAddr	ds	3
+e01b =                  getEndAddr	ds	3
+e01e =                  getAddrRange	ds	3
+                        ;
+AS65 Assembler for R6502 [1.42].                                     Page    2
+-------------------------------- samplext.asm --------------------------------
+
+                        ; future use
+                        ;
+e021 =                  xkHexDump	ds	3	;perform a hex dump
+e024 =                  xkMemEdit	ds	3	;edit memory
+e027 =                  loadHexConsole	ds	3	;load hex via console
+e02a =                  loadHexFile	ds	3	;load hex from SD
+e02d =                  doDiskDir	ds	3	;do directory of SD card
+e030 =                  calcOffset	ds	3	;compute branch offset
+                        ;
+                        ; SD card functions
+                        ;
+                        ;		org	xKIM_BASE+$0033
+e033 =                  xParInit	ds	3
+e036 =                  xParSetWrite	ds	3
+e039 =                  xParSetRead	ds	3
+e03c =                  xParWriteByte	ds	3
+e03f =                  xParReadByte	ds	3
+e042 =                  DiskPing	ds	3
+e045 =                  DiskDir		ds	3
+e048 =                  DiskDirNext	ds	3
+e04b =                  DiskOpenRead	ds	3
+e04e =                  DiskRead	ds	3
+e051 =                  DiskClose	ds	3
+e054 =                  DiskOpenWrite	ds	3
+e057 =                  DiskWrite	ds	3
+                        ;
+dff8 =                  		org	$dff8
+dff8 =                  AutoRun		ds	2
+dffa =                  ColdFlag	ds	2
+dffc =                  ExtensionAddr	ds	2
+dffe =                  HighestAddress	ds	2
+                        ;
+                        ; New vectors will go here.
+                        ;
+                        ;
+                        ; Now restore BSS!
+                        ;
+0000 =                  		org	origBss
+                        
+                        
+                        ;
+                        ; There are more vectors but I didn't need them
+                        ;
+                        ;=====================================================
+                        ; The actual sample
+                        ;
+                        		code
+dffc =                  		org	ExtensionAddr
+                        ;
+                        ; Set up the pointer to our sample extension...
+                        ;
+dffc : 0004             		dw	Extension
+                        ;
+                        ; This is the table of commands being added.  Each
+                        ; entry has exactly five bytes:
+                        ;
+                        ;    Single character command
+                        ;    Address of code for this command
+                        ;    Descriptive text for this command
+                        ;
+                        ; After the last entry, the next byte must be zero
+                        ; to indicate the end of the table.
+AS65 Assembler for R6502 [1.42].                                     Page    3
+-------------------------------- samplext.asm --------------------------------
+
+                        ;
+0400 =                  		org	$0400
+0400 : 5a               Extension	db	'Z'	;adding the 'Z' command
+0401 : 2304             		dw	zCode	;pointer to code
+0403 : 0604             		dw	zHelp	;pointer to help
+                        ;
+0405 : 00               		db	0	;END OF EXTENSIONS
+                        ;
+                        ; The descriptive text...
+                        ;
+0406 : 5a202e2e2e2e2e.. zHelp		db	"Z ........... Describe a zoo",0
+                        ;
+                        ; And the actual code...
+                        ;
+0423 : 200fe0           zCode		jsr	putsil	;call display function
+0426 : 0d0a             		db	CR,LF
+0428 : 41205a6f6f2069.. 		db	"A Zoo is a place with "
+043e : 6c6f7473206f66.. 		db	"lots of animals."
+044e : 0d0a00           		db	CR,LF,0
+0451 : 4c00e0           		jmp	extKIM	;return to Extended KIM
+                        
+No errors in pass 2.

@@ -1,0 +1,31 @@
+# Variables
+AS = ca65
+LD = ld65
+ASM_SRC = xKIM.asm
+ASM_INC = ptpload.asm wozmon.asm
+CFG = xKIM.cfg
+OBJ = xKIM.o
+BIN = xKIM.bin
+MAP = xKIM.map
+LBL = xKIM.lbl
+DEVICE = AT28C64B
+
+# Targets
+all: $(BIN)
+
+# Assemble xKIM.asm to xKIM.o
+$(OBJ): $(ASM_SRC) $(ASM_INC)
+	$(AS) -o $(OBJ) $(ASM_SRC)
+
+# Link xKIM.o using xKIM.cfg to produce xKIM.bin
+$(BIN): $(OBJ) $(CFG)
+	$(LD) -v -C $(CFG) -o $(BIN) -Ln $(LBL) -m $(MAP) $(OBJ)
+
+# Clean up generated files
+clean:
+	rm -f $(OBJ) $(BIN) $(MAP) $(LBL)
+
+burn: $(BIN)
+	minipro -p $(DEVICE) -w $(BIN)
+
+.PHONY: all clean

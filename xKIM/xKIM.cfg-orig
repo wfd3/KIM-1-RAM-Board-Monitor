@@ -1,0 +1,19 @@
+MEMORY {
+    ZP:       start = $00ef, size = $0100, type = rw, file = "";                    # Zero page (not included in ROM)
+    RAM:      start = $0300, size = $008B, type = rw, file = "";   
+#    PADDING:  start = $E000, size = $0300, type = ro, fill = yes, file = %O;
+    PADDING:  start = $C000, size = $2300, type = ro, fill = yes, file = %O;
+    XKIM:     start = $E300, size = $1D00, type = ro, fill = yes, file = %O;        # 8 KB ROM from $E000 to $FFFF
+}
+
+SEGMENTS {
+     # Segments that will **not** be included in the final ROM binary:
+    ZEROPAGE:  load = ZP,  type = zp;                   # ZEROPAGE (not included in ROM)
+    XKIMDATA:  load = RAM, type = rw;                   # XKIMDATA in RAM (not included in ROM)
+    # ROM segments that will go into the EEPROM binary:
+    PADDING:   load = PADDING, type = ro, start = $C000;
+    XKIM:      load = XKIM, type = ro, start = $E300;
+    WOZMON:    load = XKIM, type = ro, start = $FE00;
+    TRAMP:     load = XKIM, type = ro, start = $FFE2;
+    VECS:      load = XKIM, type = ro, start = $FFFA;
+}  
