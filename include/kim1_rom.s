@@ -1,21 +1,47 @@
-; KIM-1 ROM addresses
+;=====================================================
+; Useful constants
+false = 0
+true  = 1
 ;
 ;=====================================================
+; Build Options
 ;
+CUSTOM_BRINGUP  = true          ; Use the reset code in trampoline/trampoline.S
+;
+USE_WOZMON      = true          ; Include Wozmon in the ROM
+;
+UPCASE_COMMANDS = true          ; Automatically uppercase command input
+;
+;=====================================================
+; Program info
+;
+; Extended Version number
+XVERSION        = 0
+XREVISION       = 6
+;
+; Original Corsham version number
+;
+VERSION	        = 1
+REVISION        = 8
+BETA_VER        = 0
+;
+;=====================================================
 ; Common non-printable ASCII constants
 ;
-NUL		= 	$00
-BS		= 	$08
-LF		= 	$0a
-CR		= 	$0d
-ESC		= 	$1b
-SPC		= 	$20
-DOT		= '.'					; Period
-COLON	= ':'					; Colon  
-BACKSL	= $5c  ;				; back slash (can't use '\' here for some reason?)
+NUL		    = $00
+BS		    = $08
+LF		    = $0a
+CR		    = $0d
+ESC		    = $1b
+SPC		    = $20
+DOT		    = '.'					; Period
+COLON	    = ':'					; Colon  
+BACKSL	    = $5c                   ; Backslash (ca65 apparently doesn't handle '\' correctly)
+;
+;=====================================================
+; KIM-1 ROM addresses
 ;
 ; KIM Zeropage variables
-;
 PCL         =  	$ef
 PCH 		= 	$f0
 PREG 		= 	$f1
@@ -34,12 +60,7 @@ TMPX 		= 	$fd
 CHAR 		= 	$fe
 MODE 		= 	$ff
 ;
-;
-; KIM-1 data locations (page 39)
-;
-;
 ; KIM I/O locations
-;
 SAD			= 	$1740
 SBD         =   $1742
 ;
@@ -49,6 +70,7 @@ PADD		= 	$1701
 PDB         =   $1702
 PBDD        =   $1703
 ; 
+; KIM-1 data locations (page 39)
 CHKL        =   $17E7
 CHKH        =   $17E8       ;CHKSUM
 SAVX        =   $17E9       ;(3-BYTES)
@@ -61,10 +83,8 @@ SAH         =   $17F6       ;HI STARTING ADDRESS
 EAL         =   $17F7       ;LOW ENDING ADDRESS
 EAH         =   $17F8       ;HI ENDING ADDRESS
 ID          =   $17F9       ;TAPE PROGRAM ID NUMBER
-
 ;
 ; KIM subroutines located in the ROMs
-;
 NMIT		= 	$1c1c	    ;NMI handler
 IRQT		= 	$1c1f	    ;IRQ handler
 RST	    	= 	$1c22	    ;RESET handler

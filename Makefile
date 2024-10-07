@@ -1,8 +1,8 @@
+
 # Variables
 AS = ca65
 LD = ld65
 
-SUBDIRS := xKIM MSBasic wozmon trampoline intvectors
 OBJ = xKIM/xKIM.o MSBasic/kb9rom.o wozmon/wozmon.o trampoline/trampoline.o intvectors/intvectors.o
 CFG = KIM64K.cfg
 BIN = KIM64K.bin
@@ -12,12 +12,7 @@ LBL = KIM64K.lbl
 DEVICE =  M27128A@DIP28
 
 # Build everything: Ensure subdirectories and object files are built before linking
-$(BIN): clean $(CFG) 
-	$(MAKE) -C xKIM
-	$(MAKE) -C MSBasic
-	$(MAKE) -C wozmon
-	$(MAKE) -C trampoline
-	$(MAKE) -C intvectors
+$(BIN): $(CFG) subdirs
 	$(LD) -v -C $(CFG) -o $(BIN) -Ln $(LBL) -m $(MAP) $(OBJ)
 
 .PHONY: all
@@ -26,11 +21,20 @@ all: $(BIN)
 # Clean everything
 .PHONY: clean
 clean:
-	for dir in $(SUBDIRS); do \
+	for obj in $(OBJ); do \
+		dir=$$(dirname $$obj); \
 		$(MAKE) -C $$dir clean; \
 	done
 	rm -f $(BIN) $(MAP) $(LBL)
 
+# Build all the subdirs
+.PHONY: subdirs
+subdirs:
+	for obj in $(OBJ); do \
+		dir=$$(dirname $$obj); \
+		$(MAKE) -C $$dir all || exit 1; \
+	done
+
 # Burn the binary to the ROM
-burn: $(BIN)
+burn:
 	minipro -p $(DEVICE) -w $(BIN)

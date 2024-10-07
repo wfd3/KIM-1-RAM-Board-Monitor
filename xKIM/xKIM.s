@@ -62,28 +62,6 @@
 ;
 ; Useful constants
 ;
-false = 0
-true  = 1
-;
-; Extended Version number
-XVERSION  = 0
-XREVISION = 6
-;
-; Version number
-;
-VERSION	 = 1
-REVISION = 8
-BETA_VER = 0
-;
-; Set to true if you want Wozmon
-USE_WOZMON		= true
-; 
-; Automatically up-case command characters?
-UPCASE_COMMANDS	= true
-;
-; Set to true to use custom bringup
-CUSTOM_BRINGUP	= true
-;
 ; Intel HEX record types
 ;
 DATA_RECORD	= 	$00
@@ -295,6 +273,10 @@ commandTable:
 		.word showHelp
 		.word quesDesc
 ;
+		.byte 'A'
+		.word doAddresses
+		.word aDesc
+;
 		.byte 'B'
 		.word goBasic
 		.word bDesc
@@ -378,6 +360,7 @@ commandTable:
 ; the amount of space this table consumes.
 ;
 quesDesc:	.asciiz "? ........... Show this help"
+aDesc:		.asciiz "A ........... ROM addresses"
 bDesc:      .asciiz "B ........... Microsoft BASIC"
 cDesc:		.asciiz "C ........... Clear display"
 eDesc:		.asciiz "E xxxx ...... Edit memory"
@@ -420,7 +403,6 @@ goBasic:
 		jsr putsil
 		.byte CR,LF,"Starting Microsoft BASIC",CR,LF,0
 		jmp MSBASIC_START
-
 ;
 ;=====================================================
 ; Jump to Wozmon
@@ -435,6 +417,66 @@ doWozmon:
 		jmp WOZMON
 .endif
 ;
+;=====================================================
+; Print interesting address
+.import RESET
+.import NMI
+.import IRQ
+doAddresses:
+		jsr CRLF
+		
+		jsr putsil
+		.asciiz "KIM-1 Monitor    : "
+		lda #<START
+		ldy #>START
+		jsr praddrCRLF
+
+		jsr putsil
+		.asciiz "Microsoft BASIC  : "
+		lda #<MSBASIC_START
+		ldy #>MSBASIC_START
+		jsr praddrCRLF
+
+		jsr putsil
+		.asciiz "Extended Monitor : "
+		lda #<XKIM_MONITOR
+		ldy #>XKIM_MONITOR
+		jsr praddrCRLF
+
+		jsr putsil
+		.asciiz "Wozmon           : "
+		lda #<WOZMON
+		ldy #>WOZMON
+		jsr praddrCRLF
+
+		; Need to read the contents of NMI, RESET and IRQ.  Where the vectors point to is more interesting than where the 
+		; labels are in RAM.  
+		jsr putsil
+		.asciiz "NMI vector       : "
+		lda NMI
+		ldy NMI+1
+		jsr praddrCRLF
+		
+		jsr putsil
+		.asciiz "Reset vector     : "
+		lda RESET
+		ldy RESET+1
+		jsr praddrCRLF
+
+		jsr putsil
+		.asciiz "IRQ vector       : "
+		lda IRQ
+		ldy IRQ+1
+		jsr praddrCRLF
+
+		rts
+praddrCRLF:
+		sta POINTL
+		sty POINTH
+		lda #'$'
+		jsr OUTCH
+		jsr PRTPNT
+		jmp CRLF				; Will rts for us
 ;=====================================================
 ; Clear the terminal using VT100 control codes
 clearTerm:	
@@ -1102,7 +1144,7 @@ offCalc:
 		jsr	getEndAddr
 		bcs	calcExit
 		jsr	ComputeOffset	;does the work
-		bcc	relgood		;if good offset
+		bcc	relgood			;if good offset
 ;
 ; Branch is out of range.
 ;
@@ -1571,9 +1613,9 @@ initBank:
 xkimGetCH:
 		jsr GETKEY		; Call the Wozmon GETKEY (no echo)
 .if UPCASE_COMMANDS
-		cmp #'a' ;$61
+		cmp #'a'
 		bcc notLowerCase
-		cmp #'z'+1 ;$7a
+		cmp #'z'+1
 		bcs notLowerCase
 		sec
 		sbc #$20
@@ -1585,7 +1627,7 @@ notLowerCase:
 ;=====================================================
 ; Reimplemention of KIM-1 "Load from paper tape"
 ;
-.include "ptpload.asm"
+.include "ptpload.s"
 ;
 ;=====================================================
 ; Version version

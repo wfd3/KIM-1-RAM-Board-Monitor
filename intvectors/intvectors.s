@@ -3,6 +3,9 @@
 ;
 .include "../include/kim1_rom.s"
 .import MYRESET
+.export NMI
+.export RESET
+.export IRQ
 
 .segment "VECS"
 NMI:

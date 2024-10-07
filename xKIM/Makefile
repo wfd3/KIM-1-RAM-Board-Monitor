@@ -1,14 +1,13 @@
 # Variables
 AS = ca65
 LD = ld65
-ASM_SRC = xKIM.asm
-ASM_INC = ptpload.asm ../include/kim1_rom.s
+ASM_SRC = xKIM.s
+ASM_INC = ptpload.s ../include/kim1_rom.s
 OBJ = xKIM.o
 
 # Targets
 all: $(OBJ)
 
-# Assemble xKIM.asm to xKIM.o
 $(OBJ): $(ASM_SRC) $(ASM_INC)
 	$(AS) -o $(OBJ) $(ASM_SRC)
 

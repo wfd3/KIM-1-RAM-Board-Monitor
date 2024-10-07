@@ -1,7 +1,7 @@
-; configuration
-CONFIG_11A := 1
-; v2C works equally well, except the version string is incorrect
-;CONFIG_2C := 1
+; Version 1.1A is the KIM-1 original configuration
+; CONFIG_11A := 1
+; But version 2C works equally well
+CONFIG_2C := 1
 
 CONFIG_MONCOUT_DESTROYS_Y := 1
 CONFIG_NULL := 1

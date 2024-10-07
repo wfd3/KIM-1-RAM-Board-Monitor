@@ -490,9 +490,17 @@ QT_BASIC:
   .ifdef OSI
         .byte   "OSI 6502 BASIC VERSION 1.0 REV 3.2"
   .endif
-  .if .def(KIM) || .def(KIMROM)
+  .ifdef KIM 
         .byte   "MOS TECH 6502 BASIC V1.1"
   .endif
+  .ifdef KIMROM
+    .ifdef CONFIG_2C
+        .byte   "MOS TECH 6502 BASIC V2.0C"
+    .else
+      fff
+      .byte   "MOS TECH 6502 BASIC V1.1"
+    .endif 
+   .endif
   .ifdef MICROTAN
         .byte   "MICROTAN BASIC"
   .endif
