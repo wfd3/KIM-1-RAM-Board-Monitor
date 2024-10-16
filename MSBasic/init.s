@@ -7,8 +7,6 @@ FNDLIN2:
 .endif
 
 ; ----------------------------------------------------------------------------
-.export MSBASIC_START
-MSBASIC_START:
 PR_WRITTEN_BY:
 .ifndef KBD
   .ifndef CONFIG_CBM_ALL

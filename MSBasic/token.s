@@ -77,6 +77,7 @@
 		keyword_rts  "SYS", SYS
 		keyword_rts  "PLOAD", PLOAD
 		keyword_rts  "PSAVE", PSAVE
+		keyword_rts  "TOKENS", TOKENS
 .endif
 .ifndef CONFIG_SMALL
 		keyword_rts "GET", GET

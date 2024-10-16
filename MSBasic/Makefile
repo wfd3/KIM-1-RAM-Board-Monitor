@@ -1,6 +1,3 @@
-# Define assembler and flags
-AS = ca65
-
 # Define source and object files
 SRC = msbasic.s 
 OBJ = kb9rom.o
@@ -18,7 +15,7 @@ all: $(OBJ)
 
 # Rule to assemble .s to .o
 $(OBJ): $(SRC) $(INCLUDES)
-	$(AS) $(ASFLAGS) -o $@ $<
+	$(AS) $(AS_OPTS) $(ASFLAGS) -o $@ $<
 
 # Clean target
 .PHONY: clean

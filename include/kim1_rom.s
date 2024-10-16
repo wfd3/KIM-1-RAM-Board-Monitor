@@ -4,9 +4,28 @@ false = 0
 true  = 1
 ;
 ;=====================================================
-; Build Options
+; Imports from linker
+.import __XKIM_LOAD__
+.import __WOZMON_LOAD__
+.import __INIT_LOAD__
+.import __KEYWORDS_LOAD__
+.import __TRAMP_LOAD__
+; 
+;=====================================================
 ;
-CUSTOM_BRINGUP  = true          ; Use the reset code in trampoline/trampoline.S
+; Translate load address variables from the linker into more readable
+; labels
+XKIM_START      = __XKIM_LOAD__
+WOZMON_START    = __WOZMON_LOAD__
+MSBASIC_START   = __INIT_LOAD__
+TRAMPOLINE      = __TRAMP_LOAD__
+BASIC_KEYWORDS  = __KEYWORDS_LOAD__
+; 
+; And add a label for the KIM-1 monitor start
+KIM1_START      = SHOW1         ; KIM-1 Monitor
+;
+;=====================================================
+; Build Options
 ;
 USE_WOZMON      = true          ; Include Wozmon in the ROM
 ;
@@ -31,12 +50,14 @@ BETA_VER        = 0
 NUL		    = $00
 BS		    = $08
 LF		    = $0a
+FF          = $0C                   ; Formfeed character; clears the terminal
 CR		    = $0d
 ESC		    = $1b
 SPC		    = $20
 DOT		    = '.'					; Period
-COLON	    = ':'					; Colon  
+COLN	    = ':'					; Colon  
 BACKSL	    = $5c                   ; Backslash (ca65 apparently doesn't handle '\' correctly)
+DEL         = $7F
 ;
 ;=====================================================
 ; KIM-1 ROM addresses
@@ -93,7 +114,7 @@ CRLF		= 	$1e2f	    ;print CR/LF
 PRTPNT		= 	$1e1e	    ;print POINT
 PRTBYT		= 	$1e3b	    ;print A as two hex digits
 GETCH		= 	$1e5a	    ;get a key from tty into A
-OUTSP		= 	$1e9e	    ;print a space
+_OUTSP		= 	$1e9e	    ;print a space
 OUTCH		= 	$1ea0	    ;print A to TTY
 SHOW		= 	$1dac
 SHOW1		= 	$1daf
@@ -102,6 +123,6 @@ INITS 		=   $1e88
 INIT1		= 	$1e8c
 START		= 	$1c4f
 CHK			= 	$1f91
-GETBYT		= 	$1f9d
+_GETBYT		= 	$1f9d
 PRTST		= 	$1e31
 PACK		= 	$1fac

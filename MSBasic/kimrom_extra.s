@@ -1,8 +1,4 @@
 .segment "EXTRA"
-POINTL = $FA
-POINTH = $FB
-EAL = $17F7
-EAH = $17F8
 
 .import ptpLoad
 .import ptpDump
@@ -26,9 +22,8 @@ SYS_RETADR = *-1
 
 ; --------------------------------------------------------------------------
 ; CLS - Clear terminal with a form feed 
-FORMFEED      := $0C
 CLS:
-        lda     #FORMFEED
+        lda     #FF
         jmp     MONCOUT         ; will rts for us
 
 ; ---------------------------------------------------------------------------
@@ -51,8 +46,6 @@ notAscii:
 ; TTY needst to be reconfigured to send DEL rather than BS.  This converts a 
 ; DEL into a BS and writes the BS back to the TTY to have the same behavior as 
 ; if a BS was received in the first place.
-DEL     := $7F
-BS      := $08
 CHKDEL:
         cmp     #DEL
         bne     CHKDELX
@@ -139,8 +132,30 @@ PLOAD_OK:
         stx     VARTAB
         sty     VARTAB+1
         jmp     FIX_LINKS
-
+; ---------------------------------------------------------------------------
+; Walk the KEWORDS segment and print all the valid tokens BASIC knows
+TOKENS:
+        lda     #<QT_TOKENS
+        ldy     #>QT_TOKENS
+        jsr     STROUT
+        ldy     #$FF			; Rely on rollover
+tokenLoop:
+        iny
+        lda     BASIC_KEYWORDS,y
+        beq     tokenExit		; A 0 indicates end of table
+        and     #$7F			; Last char has the high bit set, clear that
+        jsr     OUTDO			; Print it
+        lda     BASIC_KEYWORDS,y        ; Faster to reload than to push/pop A
+        bpl     tokenLoop		; If not last char, get next one
+        jsr     CRDO			; Last char, print a CR/LF
+        jmp     tokenLoop
+tokenExit:
+        rts
+; ---------------------------------------------------------------------------
+; String constants
 QT_LOADED:
         .byte   "LOADED",CR,LF,0
 QT_SAVED:
         .byte   CR,LF,"SAVED",CR,LF,0
+QT_TOKENS:
+        .byte   CR,LF,"VALID TOKENS:",CR,LF,0

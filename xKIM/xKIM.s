@@ -137,6 +137,10 @@ saveEAH:		.res 1
 ;
 ;activeBank:		.res 1
 ;
+; C000 ROM present?
+; if 1, there's ROM mapped at C000-DFFF. if 0, RAM.
+isROMAtC000:		.res 1
+
 ; This is the higest location in RAM usable by user
 ; programs.  Nobody should go past this address.  If
 ; you are writing extentions to the monitor, it's
@@ -162,9 +166,7 @@ HighestAddress:	.res 2
 ;
 .segment "XKIM"
 
-.export XKIM_MONITOR
 XKIM_MONITOR:
-__START__:
 		jmp extKim
 notty:		
 		jmp	TTYKB
@@ -210,6 +212,10 @@ coldStart:
 ; Initialize the memory bank 
 ;
 		jsr initBank
+;
+; Check ROM Mapping
+;
+		jsr checkForROM
 ;
 ; Clear the terminal
 ;
@@ -399,7 +405,14 @@ returnKim:
 		jmp	SHOW1	;return to KIM
 
 goBasic:
-.import MSBASIC_START
+		lda #$01
+		cmp isROMAtC000
+		beq startBasic
+		jsr putsil
+		.byte CR,LF,"Microsoft BASIC is not in ROM; RAM at C000-DFFF",CR,LF,0
+		rts
+
+startBasic:
 		jsr putsil
 		.byte CR,LF,"Starting Microsoft BASIC",CR,LF,0
 		jmp MSBASIC_START
@@ -408,13 +421,12 @@ goBasic:
 ; Jump to Wozmon
 ;
 .if USE_WOZMON
-.import WOZMON
 doWozmon:
 		jsr putsil
 		.byte CR,LF
 		.byte "Starting Wozmon..."
 		.byte CR,LF,0
-		jmp WOZMON
+		jmp WOZMON_START
 .endif
 ;
 ;=====================================================
@@ -433,9 +445,18 @@ doAddresses:
 
 		jsr putsil
 		.asciiz "Microsoft BASIC  : "
+		lda #$01
+		cmp isROMAtC000
+		bne noBasic
 		lda #<MSBASIC_START
 		ldy #>MSBASIC_START
 		jsr praddrCRLF
+		jmp nextAddr
+noBasic:
+		jsr putsil
+		.asciiz "Basic ROM not mapped"
+		jsr CRLF
+nextAddr:
 
 		jsr putsil
 		.asciiz "Extended Monitor : "
@@ -445,8 +466,8 @@ doAddresses:
 
 		jsr putsil
 		.asciiz "Wozmon           : "
-		lda #<WOZMON
-		ldy #>WOZMON
+		lda #<WOZMON_START
+		ldy #>WOZMON_START
 		jsr praddrCRLF
 
 		; Need to read the contents of NMI, RESET and IRQ.  Where the vectors point to is more interesting than where the 
@@ -966,7 +987,7 @@ loadStart:
 		beq	loadStart
 		cmp	#LF
 		beq	loadStart
-		cmp	#COLON		;what we expect
+		cmp	#COLN		;what we expect
 		bne	loadAbortB
 ;
 ; Get the header of the record
@@ -1331,8 +1352,8 @@ showHelpLoop:
 		sta	INH
 		tya
 		pha
-		jsr	OUTSP
-		jsr	OUTSP
+		jsr	_OUTSP
+		jsr	_OUTSP
 		jsr	puts	;print description
 		jsr	CRLF
 		pla
@@ -1347,7 +1368,7 @@ showHelpDone:
 ;
 space3:		jsr	space
 space2:		jsr	space
-space:   	jmp	OUTSP
+space:   	jmp	_OUTSP
 ;
 ;=====================================================
 ; This prints the null-terminated string that
@@ -1637,6 +1658,7 @@ shortVersion:
 		.byte XVERSION+'0','.',XREVISION+'0',' '
 		.byte CR,LF
 		.byte 0
+		jsr tellROM
 		rts
 ;
 longVersion:
@@ -1655,3 +1677,44 @@ longVersion:
 		.byte 0
 		rts
 ;
+;=====================================================
+; Tell user if ROM is at C000
+tellROM:
+		lda #$01
+		cmp isROMAtC000
+		bne itsRAM
+		jsr putsil 
+		.byte "ROM",0
+		jmp tellExit
+itsRAM:
+		jsr putsil
+		.byte "RAM",0
+
+tellExit:
+		jsr putsil 
+		.byte " mapped at C000-DFFF",CR,LF,0
+		rts
+;
+;=====================================================
+; Check if ROM is mapped at C000
+checkForROM:
+		lda #$01		; Assume ROM is mapped at C000
+		sta isROMAtC000
+
+		lda $C000		; Load from C000
+		sta saveA		; save it for later
+		eor #$FF		; Modify the value
+		sta $C000		; and write it back to C000
+
+		lda $C000		; re-read C000
+		cmp saveA		; and compare against original value
+		bne isRAM       ; If not equal, it's RAM
+		rts
+
+isRAM:
+		lda saveA		; It's RAM, restore the original value
+		sta $C000
+		lda #$00        ; Set variable to indicate it's RAM
+		sta isROMAtC000
+		rts
+	

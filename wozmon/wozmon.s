@@ -40,9 +40,8 @@
 ;
 .export ECHO
 .export GETKEY
-.import XKIM_MONITOR
-KIMMON		= 	START  				; KIM ROM monitor start
-CORSHAM     =   XKIM_MONITOR			; Corsham xKIM monitor start
+KIMMON		= 	KIM1_START		; KIM ROM monitor start
+XKIMMON		=	XKIM_START		; xKIM ROM monitor start (from linker)
 ;
 ; KIM Hardware addresses used
 ;
@@ -60,18 +59,14 @@ WMODE	= 	YSAV + 1
 COUNTR	= 	WMODE + 1
 SADDR   = 	COUNTR+1  			
 
-; 
-
-
 ;
 ; input buffer
 ;
-;IN		= 	$0300
+;IN		= 	$0300 -- We share the input buffer with the rest of the rom.  See ../xKIM/xKIM.S
 .import IN
 
 .segment "WOZMON"
 
-.export WOZMON
 WOZMON: 	cld					; Clear decimal			
      		ldx 	#$FF		; Clear stack
      		txs
@@ -114,7 +109,7 @@ NXTITM:		lda 	IN,y
      		cmp 	#DOT		; . ?
      		bcc 	BLSKIP
      		beq 	SETMOD
-     		cmp 	#COLON		; : ?
+     		cmp 	#COLN		; : ?
      		beq 	SETSTR		; store mode
      		cmp 	#'R'		; R?
      		beq 	RUN			; run user program
@@ -148,7 +143,7 @@ NOTHEX:		cpy 	YSAV
      		bne 	NOESC
      		jmp 	SFTRST		; reset EWOZ
 XKIM:		jmp 	KIMMON		; start KIM monitor
-CKIM:		jmp		CORSHAM
+CKIM:		jmp		XKIMMON
 RUN:		jsr 	RUNU	
      		jmp 	SFTRST
 RUNU:		jmp 	(XAML)
@@ -177,7 +172,7 @@ NXTPRN:		bne 	PRDATA
      		jsr 	PRBYTE
      		lda 	XAML
      		jsr 	PRBYTE
-     		lda 	#COLON
+     		lda 	#COLN
      		jsr 	ECHO
 PRDATA:		lda 	#SPC
      		jsr 	ECHO

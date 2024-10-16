@@ -18,19 +18,19 @@ ptpL0:
             lda   #$00
             sta   CHKSUM
             sta   CHKHI
-            jsr   GETBYT        ;GET BYTE COUNT
+            jsr   _GETBYT       ;GET BYTE COUNT
             tax                 ;SAVE IN X INDEX
             jsr   CHK           ;COMPUTE CHECKSUM
-            jsr   GETBYT        ;GET ADDRESS HI
+            jsr   _GETBYT       ;GET ADDRESS HI
             sta   POINTH
             jsr   CHK
-            jsr   GETBYT        ;GET ADDRESS LO
+            jsr   _GETBYT       ;GET ADDRESS LO
             sta   POINTL
             jsr   CHK
             txa                 ;IF CNT=0 DONT
             beq   ptpL3         ;GET ANY DATA
 ptpL2:       
-            jsr   GETBYT        ;GET DATA
+            jsr   _GETBYT       ;GET DATA
             ldy   #$00
             sta   (POINTL),y    ;STORE DATA -- Y *must* be 0
             jsr   CHK
@@ -47,10 +47,10 @@ ptpL2:
             bne   ptpL2
             inx                 ;X=1 DATA RCD X=0 LAST RCD
 ptpL3:       
-            jsr   GETBYT        ;COMPARE CHKSUM
+            jsr   _GETBYT       ;COMPARE CHKSUM
             cmp   CHKHI
             bne   ptpL1
-            jsr   GETBYT
+            jsr   _GETBYT
             cmp   CHKSUM
             bne   ptpLoader
             txa                 ;X=0 LAST RECORD
@@ -62,7 +62,7 @@ ptpL8:
             rts
 ;
 ; ERROR?
-ptpL1:      jsr   GETBYT        ;DUMMY Read
+ptpL1:      jsr   _GETBYT       ;DUMMY Read
 ptpLoader:  jsr   putsil
             .byte CR,LF,"Checksum error reading paper tape",CR,LF,0
             ; fallthrough

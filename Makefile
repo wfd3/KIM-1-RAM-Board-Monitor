@@ -1,6 +1,7 @@
 
 # Variables
 AS = ca65
+AS_OPTS = 
 LD = ld65
 
 OBJ = xKIM/xKIM.o MSBasic/kb9rom.o wozmon/wozmon.o trampoline/trampoline.o intvectors/intvectors.o
@@ -32,7 +33,7 @@ clean:
 subdirs:
 	for obj in $(OBJ); do \
 		dir=$$(dirname $$obj); \
-		$(MAKE) -C $$dir all || exit 1; \
+		$(MAKE) -C $$dir AS=$(AS) AS_OPTS=$(AS_OPTS) LD=$(LD) all || exit 1; \
 	done
 
 # Burn the binary to the ROM

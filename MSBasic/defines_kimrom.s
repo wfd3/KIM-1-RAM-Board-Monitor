@@ -1,3 +1,6 @@
+; Include the common "header"
+.include "../include/kim1_rom.s"
+;
 ; Version 1.1A is the KIM-1 original configuration
 ; CONFIG_11A := 1
 ; But version 2C works equally well
@@ -32,7 +35,6 @@ L1873 := $1873    ; KIM-1 LOADT (load from tape)
 MONRDKEY := $1E5A ; KIM-1 GETCH
 MONCOUT := $1EA0  ; KIM-1 OUTCH
 ;SYSTEM := $1DAF   ; KIM-1 SHOW1 (return to KIM-1 monitor)
-.import XKIM_MONITOR
-SYSTEM := XKIM_MONITOR   ; xKIM monitor
+SYSTEM := XKIM_START   ; xKIM monitor
 
 RAMSTART2 := $2000    ; Where RAM starts on my system; change to suit yours
