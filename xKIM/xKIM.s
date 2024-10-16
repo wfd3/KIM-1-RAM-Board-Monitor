@@ -224,6 +224,11 @@ coldStart:
 ; Display our welcome text
 ;
 		jsr	shortVersion
+; 
+; Clear ACC
+;
+		lda #$00
+		sta ACC
 ;
 ; Main command loop.  Put out prompt, get command, etc.
 ; Prints a slightly different prompt for the RAM version.
@@ -235,9 +240,9 @@ extKimLoop:
 		.byte	">",0
 		jsr	xkimGetCH
 		cmp	#CR
-		beq	extKimLoop
+		beq	wasX
 		cmp	#LF
-		beq	extKimLoop
+		beq	wasX
 		sta	ACC			;save key
 ;
 ; Now cycle through the list of commands looking for
@@ -263,10 +268,21 @@ extKimLoop:
 ; If that returns, then the command was not found.
 ; Print that it's unknown.
 ;
+huh:
 		jsr	putsil
 		.asciiz " - Huh?"
 cmdFound:
 		jmp	extKimLoop
+;
+; If the last command was X (read a single address), help the user
+; by assuming a blank CR means they want the next incremental address
+wasX:
+		; See if the last command was 'X'
+		lda ACC
+		cmp #'X'
+		bne cmdFound
+		jsr hexReadNextAddress
+		jmp extKimLoop
 ;
 ;=====================================================
 ; Vector table of commands.  Each entry consists of a
@@ -349,6 +365,10 @@ commandTable:
 		.word wDesc
 .endif
 ;
+		.byte 'X'
+		.word hexRead
+		.word xDesc
+;
 		.byte 'Z' ; Fill memory region with 0
 		.word fillMemZero
 		.word zDesc
@@ -385,7 +405,8 @@ vDesc:		.asciiz "V ........... Version"
 .if USE_WOZMON
 wDesc:		.asciiz "W ........... Go to Wozmon monitor"
 .endif
-zDesc:		.asciiz "Z xxxx xxxx . zero memory area"
+xDesc:		.asciiz "X ........... Read a single address"
+zDesc:		.asciiz "Z xxxx xxxx . Zero memory area"
 bangDesc:	.asciiz "! ........... Do a cold start"
 ;
 ;=====================================================
@@ -398,12 +419,15 @@ returnKim:
 		.byte CR,LF
 		.byte "Returning to KIM..."
 		.byte CR,LF,0
-;		lda	#reentry&$0ff
-;		sta	POINTL	;point back to start...
-;		lda	#reentry/256
-;		sta	POINTH	;...of this code
+		; Set POINT to the start of xKIM
+		lda #<XKIM_MONITOR
+		ldy #>XKIM_MONITOR
+		sta POINTL
+		sty POINTH
 		jmp	SHOW1	;return to KIM
-
+;=====================================================
+; Jump to MS Basic
+;
 goBasic:
 		lda #$01
 		cmp isROMAtC000
@@ -502,7 +526,7 @@ praddrCRLF:
 ; Clear the terminal using VT100 control codes
 clearTerm:	
 		jsr putsil
-		.byte $1b,$5b,$32,$4a,$1b,$5b,$48,CR,LF,0
+		.byte $1b,$5b,$32,$4a,$1b,$5b,$48,0
 		rts
 
 doClearTerm:
@@ -552,6 +576,43 @@ NDY:
 		.byte CR,LF,0
 		rts
 ; 
+;=====================================================
+; Dump a single memory address
+hexRead:
+		jsr space
+		jsr getStartAddr
+		bcs hexReadExit
+		jsr CRLF
+		jsr moveSAtoPOINT
+		; fallthrough
+;=====================================================
+; Print the value at POINTL/POINTH.  Specifically, print 
+; 'address: value - ascii' 
+hexPrintAddrValue:
+		jsr PRTPNT
+		lda #COLN
+		jsr OUTCH
+		jsr space
+		ldy #$00
+		lda (POINTL),y
+		pha
+		jsr PRTBYT
+		jsr space
+		lda #'-'
+		jsr OUTCH
+		jsr space
+		pla
+		jsr printCharOrDot
+hexReadExit:
+		rts
+;=====================================================
+; Print the address at (SAH,SAL)+1.  Save the new 
+; address in SAL/SAH for future calls.
+hexReadNextAddress:
+		jsr moveSAtoPOINT	; Set POINT
+		jsr INCPT			; increment it
+		jsr movePOINTtoSA	; put the new value back in SAL/SAH
+		jmp hexPrintAddrValue ; Print the address
 ;=====================================================
 ; Do a hex dump of a region of memory.  This code was
 ; taken from MICRO issue 5, from an article by
@@ -603,19 +664,9 @@ hexdump2:
 hexdump3:
 		ldy	#0	;get next byte...
 		lda	(POINTL),y
-		bit	ID	;hex or ASCII mode?
-		bpl	hexptbt	;branch if hex mode
-;
-; Print char if printable, else print a dot
-;
-		cmp	#' '
-		bcc	hexdot
-		cmp	#'~'
-		bcc	hexpr
-hexdot:
-		lda	#DOT
-hexpr:
-		jsr	OUTCH
+		bit	ID				;hex or ASCII mode?
+		bpl	hexptbt			;branch if hex mode
+		jsr printCharOrDot	;Print the char or a '.' if unprintable
 		jmp	hexend
 ;
 ; Print character as hex.  
@@ -1310,8 +1361,7 @@ cmdLoop:
 		bne	cmdLoop
 ;
 ; It's found!  Load up the address of the code to call,
-; pop the return address off the stack and jump to the
-; handler.
+; jump to the handler.
 ;
 cmdMatch:
 		iny
@@ -1717,4 +1767,31 @@ isRAM:
 		lda #$00        ; Set variable to indicate it's RAM
 		sta isROMAtC000
 		rts
-	
+;=====================================================
+; Load POINTL/H from SAL/SAH	
+moveSAtoPOINT:
+		lda SAL
+		ldy SAH
+		sta POINTL
+		sty POINTH
+		rts
+;=====================================================
+; Move POINTL/H from SAL/SAH	
+movePOINTtoSA:
+		lda POINTL
+		ldy POINTH
+		sta SAL
+		sty SAH
+		rts
+;=====================================================
+; Print char if printable, else print a dot.  Char in A
+printCharOrDot:
+		cmp	#' '
+		bcc	hexdot
+		cmp	#'~'
+		bcc	hexpr
+hexdot:
+		lda	#DOT
+hexpr:
+		jsr	OUTCH
+		rts
